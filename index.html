@@ -3,51 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="简易计算器 - 日常生活快速计算工具">
-    <title>简易计算器</title>
+    <meta name="description" content="生活效率工具箱 - 计算器、待办清单、汇率换算">
+    <title>生活效率工具箱</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <main class="calculator" role="application" aria-label="简易计算器">
-        <!-- 显示区域 -->
-        <section class="display" aria-live="polite">
-            <div class="expression" id="expression" aria-label="表达式"></div>
-            <div class="result" id="result" aria-label="结果">0</div>
-        </section>
+    <div class="app">
+        <header class="app-header">
+            <h1 class="app-title">生活效率工具箱</h1>
+        </header>
 
-        <!-- 按钮区域 -->
-        <section class="buttons" role="group" aria-label="计算器按钮">
-            <!-- 第一行：功能按钮 -->
-            <button type="button" class="btn btn-function" id="btn-ac" aria-label="全部清除">AC</button>
-            <button type="button" class="btn btn-function" id="btn-del" aria-label="退格删除">DEL</button>
-            <button type="button" class="btn btn-function" id="btn-percent" aria-label="百分比">%</button>
-            <button type="button" class="btn btn-operator" id="btn-divide" aria-label="除法">÷</button>
+        <nav class="tab-nav" role="navigation" aria-label="工具导航">
+            <button class="tab-btn active" data-tab="calculator" aria-label="计算器">计算器</button>
+            <button class="tab-btn" data-tab="todo" aria-label="待办清单">待办清单</button>
+            <button class="tab-btn" data-tab="exchange" aria-label="汇率换算">汇率换算</button>
+        </nav>
 
-            <!-- 第二行：7 8 9 × -->
-            <button type="button" class="btn btn-number" id="btn-7" aria-label="7">7</button>
-            <button type="button" class="btn btn-number" id="btn-8" aria-label="8">8</button>
-            <button type="button" class="btn btn-number" id="btn-9" aria-label="9">9</button>
-            <button type="button" class="btn btn-operator" id="btn-multiply" aria-label="乘法">×</button>
+        <main class="tool-container">
+            <section class="tool-content active" id="calculator-tool" role="application" aria-label="计算器">
+                <div class="calculator">
+                    <section class="display" aria-live="polite">
+                        <div class="expression" id="expression" aria-label="表达式"></div>
+                        <div class="result" id="result" aria-label="结果">0</div>
+                    </section>
+                    <section class="buttons" role="group" aria-label="计算器按钮">
+                        <button type="button" class="btn btn-function" id="btn-ac" aria-label="全部清除">AC</button>
+                        <button type="button" class="btn btn-function" id="btn-del" aria-label="退格删除">DEL</button>
+                        <button type="button" class="btn btn-function" id="btn-percent" aria-label="百分比">%</button>
+                        <button type="button" class="btn btn-operator" id="btn-divide" aria-label="除法">÷</button>
+                        <button type="button" class="btn btn-number" id="btn-7" aria-label="7">7</button>
+                        <button type="button" class="btn btn-number" id="btn-8" aria-label="8">8</button>
+                        <button type="button" class="btn btn-number" id="btn-9" aria-label="9">9</button>
+                        <button type="button" class="btn btn-operator" id="btn-multiply" aria-label="乘法">×</button>
+                        <button type="button" class="btn btn-number" id="btn-4" aria-label="4">4</button>
+                        <button type="button" class="btn btn-number" id="btn-5" aria-label="5">5</button>
+                        <button type="button" class="btn btn-number" id="btn-6" aria-label="6">6</button>
+                        <button type="button" class="btn btn-operator" id="btn-subtract" aria-label="减法">-</button>
+                        <button type="button" class="btn btn-number" id="btn-1" aria-label="1">1</button>
+                        <button type="button" class="btn btn-number" id="btn-2" aria-label="2">2</button>
+                        <button type="button" class="btn btn-number" id="btn-3" aria-label="3">3</button>
+                        <button type="button" class="btn btn-operator" id="btn-add" aria-label="加法">+</button>
+                        <button type="button" class="btn btn-function" id="btn-sign" aria-label="正负切换">±</button>
+                        <button type="button" class="btn btn-number" id="btn-0" aria-label="0">0</button>
+                        <button type="button" class="btn btn-number" id="btn-decimal" aria-label="小数点">.</button>
+                        <button type="button" class="btn btn-operator btn-equals" id="btn-equals" aria-label="等于">=</button>
+                    </section>
+                </div>
+            </section>
 
-            <!-- 第三行：4 5 6 - -->
-            <button type="button" class="btn btn-number" id="btn-4" aria-label="4">4</button>
-            <button type="button" class="btn btn-number" id="btn-5" aria-label="5">5</button>
-            <button type="button" class="btn btn-number" id="btn-6" aria-label="6">6</button>
-            <button type="button" class="btn btn-operator" id="btn-subtract" aria-label="减法">-</button>
+            <section class="tool-content" id="todo-tool" role="application" aria-label="待办清单">
+                <div class="todo-app">
+                    <div class="todo-input-wrapper">
+                        <input type="text" class="todo-input" id="todo-input" placeholder="输入新待办..." aria-label="新待办输入">
+                        <button class="btn btn-primary" id="todo-add" aria-label="添加待办">+</button>
+                    </div>
+                    <ul class="todo-list" id="todo-list" aria-label="待办列表"></ul>
+                    <div class="todo-footer">
+                        <span class="todo-stats" id="todo-stats">已完成: 0 / 0</span>
+                        <button class="btn btn-secondary" id="todo-clear-completed" aria-label="清除已完成">清除已完成</button>
+                    </div>
+                </div>
+            </section>
 
-            <!-- 第四行：1 2 3 + -->
-            <button type="button" class="btn btn-number" id="btn-1" aria-label="1">1</button>
-            <button type="button" class="btn btn-number" id="btn-2" aria-label="2">2</button>
-            <button type="button" class="btn btn-number" id="btn-3" aria-label="3">3</button>
-            <button type="button" class="btn btn-operator" id="btn-add" aria-label="加法">+</button>
+            <section class="tool-content" id="exchange-tool" role="application" aria-label="汇率换算">
+                <div class="exchange-app">
+                    <div class="exchange-row">
+                        <div class="exchange-input-group">
+                            <input type="number" class="exchange-input" id="exchange-from-amount" value="1" aria-label="源货币金额">
+                            <select class="exchange-select" id="exchange-from-currency" aria-label="源货币">
+                                <option value="CNY">CNY 人民币</option>
+                                <option value="USD">USD 美元</option>
+                                <option value="EUR">EUR 欧元</option>
+                                <option value="JPY">JPY 日元</option>
+                                <option value="GBP">GBP 英镑</option>
+                                <option value="HKD">HKD 港币</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-swap" id="exchange-swap" aria-label="交换货币">⇄</button>
+                        <div class="exchange-input-group">
+                            <input type="number" class="exchange-input" id="exchange-to-amount" aria-label="目标货币金额">
+                            <select class="exchange-select" id="exchange-to-currency" aria-label="目标货币">
+                                <option value="USD">USD 美元</option>
+                                <option value="CNY">CNY 人民币</option>
+                                <option value="EUR">EUR 欧元</option>
+                                <option value="JPY">JPY 日元</option>
+                                <option value="GBP">GBP 英镑</option>
+                                <option value="HKD">HKD 港币</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="exchange-rate-info" id="exchange-rate-info" aria-label="汇率信息"></div>
+                </div>
+            </section>
+        </main>
 
-            <!-- 第五行：± 0 . = -->
-            <button type="button" class="btn btn-function" id="btn-sign" aria-label="正负切换">±</button>
-            <button type="button" class="btn btn-number" id="btn-0" aria-label="0">0</button>
-            <button type="button" class="btn btn-number" id="btn-decimal" aria-label="小数点">.</button>
-            <button type="button" class="btn btn-operator btn-equals" id="btn-equals" aria-label="等于">=</button>
-        </section>
-    </main>
+        <div class="toast" id="toast" aria-live="polite"></div>
+    </div>
 
     <script src="script.js"></script>
 </body>

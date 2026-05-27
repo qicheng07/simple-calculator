@@ -1,10 +1,13 @@
-/* 简易计算器样式文件 */
-
-/* CSS变量定义 */
 :root {
-    /* 颜色方案 */
+    --color-primary: #FF9500;
+    --color-bg: #F5F5F7;
+    --color-card: #FFFFFF;
+    --color-text: #1D1D1F;
+    --color-text-secondary: #86868B;
+    --color-success: #34C759;
+    --color-danger: #FF3B30;
+    --color-border: #E5E5EA;
     --color-number-bg: #E5E5E5;
-    --color-number-text: #333333;
     --color-operator-bg: #FF9500;
     --color-operator-text: #FFFFFF;
     --color-function-bg: #D4D4D2;
@@ -14,46 +17,105 @@
     --color-result-text: #FFFFFF;
     --color-error: #FF3B30;
     --color-calculator-bg: #000000;
-
-    /* 按钮尺寸 - 移动端默认 */
     --btn-size: 64px;
     --btn-gap: 12px;
     --btn-radius: 50%;
-
-    /* 字体大小 */
     --font-expression: 16px;
     --font-result: 32px;
     --font-btn: 24px;
 }
 
-/* 重置样式 */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
-/* 页面基础样式 */
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    background-color: var(--color-calculator-bg);
+    background-color: var(--color-bg);
     min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     padding: 20px;
 }
 
-/* 计算器容器 */
+.app {
+    max-width: 480px;
+    margin: 0 auto;
+}
+
+.app-header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.app-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.tab-nav {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    background: var(--color-card);
+    padding: 8px;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+    background: var(--color-bg);
+}
+
+.tab-btn:active {
+    transform: scale(0.95);
+}
+
+.tab-btn.active {
+    background: var(--color-primary);
+    color: white;
+}
+
+.tool-container {
+    position: relative;
+    min-height: 500px;
+}
+
+.tool-content {
+    display: none;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.tool-content.active {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
 .calculator {
     background-color: var(--color-calculator-bg);
     border-radius: 20px;
     padding: 20px;
-    max-width: 360px;
     width: 100%;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.15);
 }
 
-/* 显示区域 */
 .display {
     background-color: var(--color-display-bg);
     border-radius: 12px;
@@ -67,7 +129,6 @@ body {
     overflow: hidden;
 }
 
-/* 表达式区域 */
 .expression {
     font-size: var(--font-expression);
     color: var(--color-expression-text);
@@ -77,7 +138,6 @@ body {
     width: 100%;
 }
 
-/* 结果区域 */
 .result {
     font-size: var(--font-result);
     color: var(--color-result-text);
@@ -89,19 +149,16 @@ body {
     transition: font-size 0.2s ease;
 }
 
-/* 结果区域 - 错误状态 */
 .result.error {
     color: var(--color-error);
 }
 
-/* 按钮区域 */
 .buttons {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: var(--btn-gap);
 }
 
-/* 按钮基础样式 */
 .btn {
     width: var(--btn-size);
     height: var(--btn-size);
@@ -117,90 +174,351 @@ body {
     justify-self: center;
 }
 
-/* 按钮悬停状态 */
 .btn:hover {
     filter: brightness(0.9);
 }
 
-/* 按钮按下状态 */
 .btn:active {
     filter: brightness(0.8);
     transform: scale(0.95);
 }
 
-/* 按钮禁用状态 */
 .btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
-/* 数字按钮 */
 .btn-number {
     background-color: var(--color-number-bg);
-    color: var(--color-number-text);
+    color: var(--color-function-text);
 }
 
-/* 运算符按钮 */
 .btn-operator {
     background-color: var(--color-operator-bg);
     color: var(--color-operator-text);
 }
 
-/* 运算符按钮激活状态 */
 .btn-operator.active {
     background-color: var(--color-operator-text);
     color: var(--color-operator-bg);
 }
 
-/* 功能按钮 */
 .btn-function {
     background-color: var(--color-function-bg);
     color: var(--color-function-text);
 }
 
-/* 等号按钮特殊样式 */
 .btn-equals {
     font-weight: 600;
 }
 
-/* 响应式设计 - 桌面端 */
-@media (min-width: 768px) {
-    :root {
-        --btn-size: 72px;
-        --btn-gap: 16px;
-        --font-result: 40px;
-    }
+.todo-app {
+    background: var(--color-card);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
 
-    .calculator {
-        max-width: 400px;
-    }
+.todo-input-wrapper {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+}
 
-    .display {
-        min-height: 120px;
-        padding: 24px;
+.todo-input {
+    flex: 1;
+    height: 44px;
+    padding: 0 16px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.todo-input:focus {
+    border-color: var(--color-primary);
+}
+
+.btn-primary {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    background: var(--color-primary);
+    color: white;
+    font-size: 24px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-primary:hover {
+    filter: brightness(0.9);
+}
+
+.btn-primary:active {
+    transform: scale(0.95);
+}
+
+.todo-list {
+    list-style: none;
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+}
+
+.todo-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--color-bg);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    transition: all 0.3s ease;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
-/* 响应式设计 - 小屏幕移动端 */
-@media (max-width: 360px) {
-    :root {
-        --btn-size: 56px;
-        --btn-gap: 10px;
-        --font-btn: 20px;
-        --font-result: 28px;
-    }
+.todo-item.deleting {
+    animation: slideOut 0.3s ease forwards;
+}
 
-    .calculator {
-        padding: 12px;
-    }
-
-    .display {
-        padding: 16px;
-        min-height: 80px;
+@keyframes slideOut {
+    to {
+        opacity: 0;
+        transform: translateX(20px);
+        height: 0;
+        padding: 0;
+        margin-bottom: 0;
     }
 }
 
-/* 超长数字时缩小字体 */
+.todo-checkbox {
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--color-border);
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.todo-checkbox:hover {
+    border-color: var(--color-primary);
+}
+
+.todo-item.completed .todo-checkbox {
+    background: var(--color-success);
+    border-color: var(--color-success);
+}
+
+.todo-checkbox::after {
+    content: '✓';
+    color: white;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.todo-item.completed .todo-checkbox::after {
+    opacity: 1;
+}
+
+.todo-text {
+    flex: 1;
+    font-size: 16px;
+    color: var(--color-text);
+    transition: all 0.2s ease;
+    word-break: break-word;
+}
+
+.todo-item.completed .todo-text {
+    color: var(--color-text-secondary);
+    text-decoration: line-through;
+}
+
+.todo-edit-input {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid var(--color-primary);
+    border-radius: 6px;
+    font-size: 16px;
+    outline: none;
+}
+
+.todo-delete {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: var(--color-danger);
+    font-size: 20px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.todo-delete:hover {
+    background: rgba(255, 59, 48, 0.1);
+}
+
+.todo-delete:active {
+    transform: scale(0.9);
+}
+
+.todo-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-border);
+}
+
+.todo-stats {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+}
+
+.btn-secondary {
+    height: 36px;
+    padding: 0 16px;
+    border: none;
+    background: var(--color-bg);
+    color: var(--color-text-secondary);
+    font-size: 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-secondary:hover {
+    background: var(--color-border);
+}
+
+.btn-secondary:active {
+    transform: scale(0.95);
+}
+
+.exchange-app {
+    background: var(--color-card);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+.exchange-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.exchange-input-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.exchange-input {
+    width: 100%;
+    height: 52px;
+    padding: 0 16px;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    font-size: 24px;
+    font-weight: 500;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.exchange-input:focus {
+    border-color: var(--color-primary);
+}
+
+.exchange-select {
+    width: 100%;
+    height: 44px;
+    padding: 0 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    font-size: 14px;
+    background: var(--color-bg);
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.exchange-select:focus {
+    border-color: var(--color-primary);
+}
+
+.btn-swap {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: white;
+    font-size: 24px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.btn-swap:hover {
+    filter: brightness(0.9);
+    transform: rotate(180deg);
+}
+
+.btn-swap:active {
+    transform: rotate(180deg) scale(0.9);
+}
+
+.exchange-rate-info {
+    margin-top: 24px;
+    padding: 16px;
+    background: var(--color-bg);
+    border-radius: 10px;
+    text-align: center;
+    font-size: 14px;
+    color: var(--color-text-secondary);
+}
+
+.toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    padding: 12px 24px;
+    background: var(--color-text);
+    color: white;
+    border-radius: 8px;
+    font-size: 14px;
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
 .result.small-text {
     font-size: calc(var(--font-result) * 0.7);
 }
@@ -209,19 +527,66 @@ body {
     font-size: calc(var(--font-result) * 0.5);
 }
 
-/* 键盘焦点样式 */
 .btn:focus-visible {
-    outline: 3px solid var(--color-operator-bg);
+    outline: 3px solid var(--color-primary);
     outline-offset: 2px;
 }
 
-/* 无障碍访问 - 减少动画 */
 @media (prefers-reduced-motion: reduce) {
-    .btn {
+    .btn, .result, .tool-content, .todo-item, .toast {
         transition: none;
     }
+}
 
-    .result {
-        transition: none;
+@media (min-width: 768px) {
+    :root {
+        --btn-size: 72px;
+        --btn-gap: 16px;
+        --font-result: 40px;
+    }
+    .calculator {
+        max-width: 400px;
+        margin: 0 auto;
+    }
+    .display {
+        min-height: 120px;
+        padding: 24px;
+    }
+}
+
+@media (max-width: 480px) {
+    .tab-nav {
+        flex-direction: column;
+    }
+    .tab-btn {
+        width: 100%;
+    }
+    .exchange-row {
+        flex-direction: column;
+    }
+    .btn-swap {
+        transform: rotate(90deg);
+    }
+    .btn-swap:hover {
+        transform: rotate(270deg);
+    }
+    .btn-swap:active {
+        transform: rotate(270deg) scale(0.9);
+    }
+}
+
+@media (max-width: 360px) {
+    :root {
+        --btn-size: 56px;
+        --btn-gap: 10px;
+        --font-btn: 20px;
+        --font-result: 28px;
+    }
+    .calculator {
+        padding: 12px;
+    }
+    .display {
+        padding: 16px;
+        min-height: 80px;
     }
 }

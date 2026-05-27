@@ -1,161 +1,201 @@
-/**
- * 简易计算器 - JavaScript逻辑
- * 实现基础四则运算、小数运算、清除功能、错误处理、运算优先级、连续运算
- */
-
 (function() {
     'use strict';
 
-    // ==================== 状态管理 ====================
-
-    // 计算器状态
-    const state = {
-        currentValue: '0',      // 当前显示的值
-        expression: '',         // 表达式字符串
-        lastOperator: null,     // 最后一个运算符
-        lastOperand: null,      // 最后一个操作数（用于连续等号）
-        shouldResetDisplay: false, // 是否需要重置显示
-        isError: false          // 是否处于错误状态
+    const STORAGE_KEYS = {
+        ACTIVE_TAB: 'workbench_activeTab',
+        TODO_ITEMS: 'todo_items'
     };
 
-    // 常量定义
-    const MAX_DISPLAY_LENGTH = 12;     // 最大显示位数
-    const MAX_DECIMAL_PLACES = 8;      // 小数最大位数
-    const ERROR_MESSAGE = 'Error';     // 错误提示信息
+    const EXCHANGE_RATES = {
+        CNY: 1,
+        USD: 0.14,
+        EUR: 0.13,
+        JPY: 21.0,
+        GBP: 0.11,
+        HKD: 1.09
+    };
 
-    // ==================== DOM元素获取 ====================
+    const state = {
+        calculator: {
+            currentValue: '0',
+            expression: '',
+            lastOperator: null,
+            lastOperand: null,
+            shouldResetDisplay: false,
+            isError: false
+        },
+        todo: [],
+        exchange: {
+            fromCurrency: 'CNY',
+            toCurrency: 'USD',
+            fromAmount: 1,
+            toAmount: 0.14
+        },
+        activeTab: 'calculator'
+    };
+
+    const MAX_DISPLAY_LENGTH = 12;
+    const MAX_DECIMAL_PLACES = 8;
+    const ERROR_MESSAGE = 'Error';
 
     const elements = {
-        result: document.getElementById('result'),
-        expression: document.getElementById('expression'),
-        btnAc: document.getElementById('btn-ac'),
-        btnDel: document.getElementById('btn-del'),
-        btnPercent: document.getElementById('btn-percent'),
-        btnSign: document.getElementById('btn-sign'),
-        btnDecimal: document.getElementById('btn-decimal'),
-        btnEquals: document.getElementById('btn-equals'),
-        btnAdd: document.getElementById('btn-add'),
-        btnSubtract: document.getElementById('btn-subtract'),
-        btnMultiply: document.getElementById('btn-multiply'),
-        btnDivide: document.getElementById('btn-divide'),
-        numberButtons: document.querySelectorAll('.btn-number:not(#btn-decimal)')
+        tabBtns: document.querySelectorAll('.tab-btn'),
+        toolContents: document.querySelectorAll('.tool-content'),
+        toast: document.getElementById('toast'),
+        calc: {
+            result: document.getElementById('result'),
+            expression: document.getElementById('expression'),
+            btnAc: document.getElementById('btn-ac'),
+            btnDel: document.getElementById('btn-del'),
+            btnPercent: document.getElementById('btn-percent'),
+            btnSign: document.getElementById('btn-sign'),
+            btnDecimal: document.getElementById('btn-decimal'),
+            btnEquals: document.getElementById('btn-equals'),
+            btnAdd: document.getElementById('btn-add'),
+            btnSubtract: document.getElementById('btn-subtract'),
+            btnMultiply: document.getElementById('btn-multiply'),
+            btnDivide: document.getElementById('btn-divide'),
+            numberBtns: document.querySelectorAll('.btn-number:not(#btn-decimal)')
+        },
+        todo: {
+            input: document.getElementById('todo-input'),
+            addBtn: document.getElementById('todo-add'),
+            list: document.getElementById('todo-list'),
+            stats: document.getElementById('todo-stats'),
+            clearBtn: document.getElementById('todo-clear-completed')
+        },
+        exchange: {
+            fromAmount: document.getElementById('exchange-from-amount'),
+            toAmount: document.getElementById('exchange-to-amount'),
+            fromCurrency: document.getElementById('exchange-from-currency'),
+            toCurrency: document.getElementById('exchange-to-currency'),
+            swapBtn: document.getElementById('exchange-swap'),
+            rateInfo: document.getElementById('exchange-rate-info')
+        }
     };
 
-    // ==================== 工具函数 ====================
+    function showToast(message) {
+        elements.toast.textContent = message;
+        elements.toast.classList.add('show');
+        setTimeout(() => {
+            elements.toast.classList.remove('show');
+        }, 2000);
+    }
 
-    /**
-     * 格式化数字显示
-     * @param {string|number} value - 要格式化的值
-     * @returns {string} 格式化后的字符串
-     */
+    function saveToStorage(key, data) {
+        try {
+            localStorage.setItem(key, JSON.stringify(data));
+        } catch (e) {
+            console.error('Storage save error:', e);
+        }
+    }
+
+    function loadFromStorage(key, defaultValue) {
+        try {
+            const data = localStorage.getItem(key);
+            return data ? JSON.parse(data) : defaultValue;
+        } catch (e) {
+            console.error('Storage load error:', e);
+            return defaultValue;
+        }
+    }
+
+    function switchTab(tabName) {
+        state.activeTab = tabName;
+        saveToStorage(STORAGE_KEYS.ACTIVE_TAB, tabName);
+
+        elements.tabBtns.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tab === tabName);
+        });
+
+        elements.toolContents.forEach(content => {
+            content.classList.toggle('active', content.id === `${tabName}-tool`);
+        });
+    }
+
+    function initTabManager() {
+        const savedTab = loadFromStorage(STORAGE_KEYS.ACTIVE_TAB, 'calculator');
+        
+        elements.tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                switchTab(btn.dataset.tab);
+            });
+        });
+
+        if (savedTab) {
+            switchTab(savedTab);
+        }
+    }
+
     function formatDisplay(value) {
         const numValue = typeof value === 'string' ? value : String(value);
-
-        // 错误状态直接返回
         if (numValue === ERROR_MESSAGE || numValue === 'Overflow') {
             return numValue;
         }
-
-        // 转换为数字
         const num = parseFloat(numValue);
-
-        // 检查是否溢出
         if (Math.abs(num) > 1e308) {
             return 'Overflow';
         }
-
-        // 检查是否需要科学计数法（数字绝对值大于等于1e12或字符串长度超过12）
         if (Math.abs(num) >= 1e12 || numValue.length > MAX_DISPLAY_LENGTH) {
             return num.toExponential(5);
         }
-
-        // 处理小数精度
         if (numValue.includes('.')) {
             const parts = numValue.split('.');
             const decimalPart = parts[1] || '';
-
-            // 如果小数位数超过最大值，进行截断
             if (decimalPart.length > MAX_DECIMAL_PLACES) {
                 return parseFloat(num).toFixed(MAX_DECIMAL_PLACES).replace(/\.?0+$/, '');
             }
         }
-
-        // 移除整数部分末尾的零（如 5.0 -> 5）
         if (numValue.includes('.') && !numValue.endsWith('.')) {
             const trimmed = parseFloat(numValue).toString();
             return trimmed;
         }
-
         return numValue;
     }
 
-    /**
-     * 更新显示区域
-     */
-    function updateDisplay() {
-        // 更新结果区域
-        const displayValue = formatDisplay(state.currentValue);
-        elements.result.textContent = displayValue;
+    function updateCalcDisplay() {
+        const displayValue = formatDisplay(state.calculator.currentValue);
+        elements.calc.result.textContent = displayValue;
+        elements.calc.expression.textContent = state.calculator.expression;
 
-        // 更新表达式区域
-        elements.expression.textContent = state.expression;
-
-        // 处理错误状态样式
-        if (state.isError) {
-            elements.result.classList.add('error');
+        if (state.calculator.isError) {
+            elements.calc.result.classList.add('error');
         } else {
-            elements.result.classList.remove('error');
+            elements.calc.result.classList.remove('error');
         }
 
-        // 根据长度调整字体大小
-        elements.result.classList.remove('small-text', 'extra-small-text');
+        elements.calc.result.classList.remove('small-text', 'extra-small-text');
         if (displayValue.length > 10) {
-            elements.result.classList.add('extra-small-text');
+            elements.calc.result.classList.add('extra-small-text');
         } else if (displayValue.length > 7) {
-            elements.result.classList.add('small-text');
+            elements.calc.result.classList.add('small-text');
         }
 
-        // 更新AC按钮状态
         updateAcButton();
     }
 
-    /**
-     * 更新AC按钮状态
-     */
     function updateAcButton() {
-        const hasInput = state.currentValue !== '0' || state.expression !== '';
-        elements.btnAc.disabled = !hasInput && !state.isError;
+        const hasInput = state.calculator.currentValue !== '0' || state.calculator.expression !== '';
+        elements.calc.btnAc.disabled = !hasInput && !state.calculator.isError;
     }
 
-    /**
-     * 重置计算器状态
-     */
     function resetCalculator() {
-        state.currentValue = '0';
-        state.expression = '';
-        state.lastOperator = null;
-        state.lastOperand = null;
-        state.shouldResetDisplay = false;
-        state.isError = false;
-        updateDisplay();
-
-        // 清除运算符激活状态
+        state.calculator.currentValue = '0';
+        state.calculator.expression = '';
+        state.calculator.lastOperator = null;
+        state.calculator.lastOperand = null;
+        state.calculator.shouldResetDisplay = false;
+        state.calculator.isError = false;
+        updateCalcDisplay();
         clearOperatorActive();
     }
 
-    /**
-     * 清除运算符激活状态
-     */
     function clearOperatorActive() {
-        document.querySelectorAll('.btn-operator').forEach(function(btn) {
+        document.querySelectorAll('.btn-operator').forEach(btn => {
             btn.classList.remove('active');
         });
     }
 
-    /**
-     * 设置运算符激活状态
-     * @param {HTMLElement} operatorBtn - 运算符按钮
-     */
     function setOperatorActive(operatorBtn) {
         clearOperatorActive();
         if (operatorBtn) {
@@ -163,326 +203,192 @@
         }
     }
 
-    // ==================== 数字输入处理 ====================
-
-    /**
-     * 处理数字输入
-     * @param {string} digit - 输入的数字
-     */
     function inputNumber(digit) {
-        // 如果处于错误状态，先清除
-        if (state.isError) {
+        if (state.calculator.isError) {
             resetCalculator();
         }
-
-        // 如果需要重置显示
-        if (state.shouldResetDisplay) {
-            state.currentValue = digit;
-            state.shouldResetDisplay = false;
+        if (state.calculator.shouldResetDisplay) {
+            state.calculator.currentValue = digit;
+            state.calculator.shouldResetDisplay = false;
             clearOperatorActive();
         } else {
-            // 检查最大长度限制
-            if (state.currentValue.replace(/[.-]/g, '').length >= MAX_DISPLAY_LENGTH) {
+            if (state.calculator.currentValue.replace(/[.-]/g, '').length >= MAX_DISPLAY_LENGTH) {
                 return;
             }
-
-            // 替换初始值0或追加数字
-            if (state.currentValue === '0' && digit !== '0') {
-                state.currentValue = digit;
-            } else if (state.currentValue !== '0') {
-                state.currentValue += digit;
+            if (state.calculator.currentValue === '0' && digit !== '0') {
+                state.calculator.currentValue = digit;
+            } else if (state.calculator.currentValue !== '0') {
+                state.calculator.currentValue += digit;
             }
-            // 如果当前是0，再输入0，保持不变
         }
-
-        updateDisplay();
+        updateCalcDisplay();
     }
 
-    /**
-     * 处理小数点输入
-     */
     function inputDecimal() {
-        // 如果处于错误状态，先清除
-        if (state.isError) {
+        if (state.calculator.isError) {
             resetCalculator();
         }
-
-        // 如果需要重置显示
-        if (state.shouldResetDisplay) {
-            state.currentValue = '0.';
-            state.shouldResetDisplay = false;
+        if (state.calculator.shouldResetDisplay) {
+            state.calculator.currentValue = '0.';
+            state.calculator.shouldResetDisplay = false;
             clearOperatorActive();
-            updateDisplay();
+            updateCalcDisplay();
             return;
         }
-
-        // 检查是否已有小数点
-        if (state.currentValue.includes('.')) {
+        if (state.calculator.currentValue.includes('.')) {
             return;
         }
-
-        // 添加小数点
-        state.currentValue += '.';
-        updateDisplay();
+        state.calculator.currentValue += '.';
+        updateCalcDisplay();
     }
 
-    // ==================== 运算符处理 ====================
-
-    /**
-     * 处理运算符输入
-     * @param {string} operator - 运算符
-     * @param {HTMLElement} btn - 按钮元素
-     */
     function inputOperator(operator, btn) {
-        // 如果处于错误状态，不处理
-        if (state.isError) {
+        if (state.calculator.isError) {
             return;
         }
-
-        // 如果表达式为空，将当前值作为第一个操作数
-        if (state.expression === '') {
-            state.expression = state.currentValue + ' ' + operator + ' ';
+        if (state.calculator.expression === '') {
+            state.calculator.expression = state.calculator.currentValue + ' ' + operator + ' ';
         } else {
-            // 检查表达式是否以运算符结尾
-            const lastChar = state.expression.trim().slice(-1);
+            const lastChar = state.calculator.expression.trim().slice(-1);
             if (['+', '-', '×', '÷'].includes(lastChar)) {
-                // 如果需要重置显示（用户刚输入完数字），追加当前值和运算符
-                if (!state.shouldResetDisplay) {
-                    // 构建完整表达式（不计算，等号时才计算）
-                    state.expression = state.expression + state.currentValue + ' ' + operator + ' ';
+                if (!state.calculator.shouldResetDisplay) {
+                    state.calculator.expression = state.calculator.expression + state.calculator.currentValue + ' ' + operator + ' ';
                 } else {
-                    // 用户连续输入运算符，替换最后一个运算符
-                    state.expression = state.expression.trim().slice(0, -1) + operator + ' ';
+                    state.calculator.expression = state.calculator.expression.trim().slice(0, -1) + operator + ' ';
                 }
             } else {
-                // 表达式不以运算符结尾（正常情况），追加当前值和运算符
-                state.expression = state.expression + state.currentValue + ' ' + operator + ' ';
+                state.calculator.expression = state.calculator.expression + state.calculator.currentValue + ' ' + operator + ' ';
             }
         }
-
-        state.lastOperator = operator;
-        state.shouldResetDisplay = true;
+        state.calculator.lastOperator = operator;
+        state.calculator.shouldResetDisplay = true;
         setOperatorActive(btn);
-        updateDisplay();
+        updateCalcDisplay();
     }
 
-    /**
-     * 计算中间结果（用于连续运算）
-     * @returns {string} 计算结果
-     */
-    function calculateIntermediate() {
-        const fullExpression = state.expression + state.currentValue;
-        return evaluateExpression(fullExpression);
-    }
-
-    // ==================== 表达式计算 ====================
-
-    /**
-     * 计算表达式结果
-     * @param {string} expr - 表达式字符串
-     * @returns {string} 计算结果
-     */
     function evaluateExpression(expr) {
         try {
-            // 将显示符号转换为计算符号
             let calcExpr = expr
                 .replace(/×/g, '*')
                 .replace(/÷/g, '/')
                 .replace(/−/g, '-');
-
-            // 使用 Function 构造器安全计算（比 eval 更可控）
-            // 先处理乘除，再处理加减（通过 JavaScript 的运算优先级）
             const result = Function('"use strict"; return (' + calcExpr + ')')();
-
-            // 检查除以零
             if (!isFinite(result)) {
-                state.isError = true;
+                state.calculator.isError = true;
                 return ERROR_MESSAGE;
             }
-
-            // 检查溢出
             if (Math.abs(result) > 1e308) {
-                state.isError = true;
+                state.calculator.isError = true;
                 return 'Overflow';
             }
-
-            // 格式化结果
             const formatted = formatNumber(result);
             return formatted;
         } catch (e) {
-            state.isError = true;
+            state.calculator.isError = true;
             return ERROR_MESSAGE;
         }
     }
 
-    /**
-     * 格式化数字结果
-     * @param {number} num - 数字
-     * @returns {string} 格式化后的字符串
-     */
     function formatNumber(num) {
-        // 检查是否需要科学计数法
         if (Math.abs(num) >= 1e12) {
             return num.toExponential(5);
         }
-
-        // 处理浮点数精度问题
         const rounded = parseFloat(num.toPrecision(12));
-
-        // 如果是整数，返回整数形式
         if (Number.isInteger(rounded)) {
             return String(rounded);
         }
-
-        // 保留最多8位小数，去除末尾零
         return parseFloat(rounded.toFixed(MAX_DECIMAL_PLACES)).toString();
     }
 
-    // ==================== 等号处理 ====================
-
-    /**
-     * 执行等于计算
-     */
     function calculateEquals() {
-        // 如果处于错误状态，不处理
-        if (state.isError) {
+        if (state.calculator.isError) {
             return;
         }
-
-        // 如果表达式为空，无操作
-        if (state.expression === '') {
+        if (state.calculator.expression === '') {
             return;
         }
-
-        // 构建完整表达式
         let fullExpression;
-        if (state.shouldResetDisplay && state.lastOperand !== null) {
-            // 连续等号：使用上次的操作数
-            fullExpression = state.currentValue + ' ' + state.lastOperator + ' ' + state.lastOperand;
+        if (state.calculator.shouldResetDisplay && state.calculator.lastOperand !== null) {
+            fullExpression = state.calculator.currentValue + ' ' + state.calculator.lastOperator + ' ' + state.calculator.lastOperand;
         } else {
-            fullExpression = state.expression + state.currentValue;
-            // 保存当前操作数用于连续等号
-            state.lastOperand = state.currentValue;
+            fullExpression = state.calculator.expression + state.calculator.currentValue;
+            state.calculator.lastOperand = state.calculator.currentValue;
         }
-
-        // 计算结果
         const result = evaluateExpression(fullExpression);
-
-        // 更新显示
-        state.expression = fullExpression + ' =';
-        state.currentValue = result;
-        state.shouldResetDisplay = true;
+        state.calculator.expression = fullExpression + ' =';
+        state.calculator.currentValue = result;
+        state.calculator.shouldResetDisplay = true;
         clearOperatorActive();
-        updateDisplay();
+        updateCalcDisplay();
     }
 
-    // ==================== 清除功能 ====================
-
-    /**
-     * 全部清除（AC）
-     */
     function allClear() {
         resetCalculator();
     }
 
-    /**
-     * 退格删除（DEL）
-     */
     function deleteLastChar() {
-        // 如果处于错误状态，清除错误
-        if (state.isError) {
+        if (state.calculator.isError) {
             resetCalculator();
             return;
         }
-
-        // 如果需要重置显示，不执行删除
-        if (state.shouldResetDisplay) {
+        if (state.calculator.shouldResetDisplay) {
             return;
         }
-
-        // 删除最后一位
-        if (state.currentValue.length > 1) {
-            state.currentValue = state.currentValue.slice(0, -1);
+        if (state.calculator.currentValue.length > 1) {
+            state.calculator.currentValue = state.calculator.currentValue.slice(0, -1);
         } else {
-            state.currentValue = '0';
+            state.calculator.currentValue = '0';
         }
-
-        updateDisplay();
+        updateCalcDisplay();
     }
 
-    // ==================== 百分比功能 ====================
-
-    /**
-     * 处理百分比输入
-     */
     function inputPercent() {
-        // 如果处于错误状态，不处理
-        if (state.isError) {
+        if (state.calculator.isError) {
             return;
         }
-
-        const num = parseFloat(state.currentValue);
-        state.currentValue = formatNumber(num / 100);
-        updateDisplay();
+        const num = parseFloat(state.calculator.currentValue);
+        state.calculator.currentValue = formatNumber(num / 100);
+        updateCalcDisplay();
     }
 
-    // ==================== 正负切换 ====================
-
-    /**
-     * 切换正负号
-     */
     function toggleSign() {
-        // 如果处于错误状态，不处理
-        if (state.isError) {
+        if (state.calculator.isError) {
             return;
         }
-
-        if (state.currentValue === '0') {
+        if (state.calculator.currentValue === '0') {
             return;
         }
-
-        if (state.currentValue.startsWith('-')) {
-            state.currentValue = state.currentValue.slice(1);
+        if (state.calculator.currentValue.startsWith('-')) {
+            state.calculator.currentValue = state.calculator.currentValue.slice(1);
         } else {
-            state.currentValue = '-' + state.currentValue;
+            state.calculator.currentValue = '-' + state.calculator.currentValue;
         }
-
-        updateDisplay();
+        updateCalcDisplay();
     }
 
-    // ==================== 键盘支持 ====================
-
-    /**
-     * 处理键盘输入
-     * @param {KeyboardEvent} event - 键盘事件
-     */
-    function handleKeyboard(event) {
+    function handleCalcKeyboard(event) {
         const key = event.key;
-
-        // 数字键
         if (/^[0-9]$/.test(key)) {
             event.preventDefault();
             inputNumber(key);
             return;
         }
-
-        // 运算符键
         switch (key) {
             case '+':
                 event.preventDefault();
-                inputOperator('+', elements.btnAdd);
+                inputOperator('+', elements.calc.btnAdd);
                 break;
             case '-':
                 event.preventDefault();
-                inputOperator('-', elements.btnSubtract);
+                inputOperator('-', elements.calc.btnSubtract);
                 break;
             case '*':
                 event.preventDefault();
-                inputOperator('×', elements.btnMultiply);
+                inputOperator('×', elements.calc.btnMultiply);
                 break;
             case '/':
                 event.preventDefault();
-                inputOperator('÷', elements.btnDivide);
+                inputOperator('÷', elements.calc.btnDivide);
                 break;
             case '.':
             case ',':
@@ -509,64 +415,225 @@
         }
     }
 
-    // ==================== 事件绑定 ====================
-
-    /**
-     * 初始化事件监听器
-     */
-    function initEventListeners() {
-        // 数字按钮
-        elements.numberButtons.forEach(function(btn) {
-            btn.addEventListener('click', function() {
+    function initCalculator() {
+        elements.calc.numberBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
                 inputNumber(btn.textContent);
             });
         });
 
-        // 小数点按钮
-        elements.btnDecimal.addEventListener('click', inputDecimal);
+        elements.calc.btnDecimal.addEventListener('click', inputDecimal);
+        elements.calc.btnAdd.addEventListener('click', () => inputOperator('+', elements.calc.btnAdd));
+        elements.calc.btnSubtract.addEventListener('click', () => inputOperator('-', elements.calc.btnSubtract));
+        elements.calc.btnMultiply.addEventListener('click', () => inputOperator('×', elements.calc.btnMultiply));
+        elements.calc.btnDivide.addEventListener('click', () => inputOperator('÷', elements.calc.btnDivide));
+        elements.calc.btnEquals.addEventListener('click', calculateEquals);
+        elements.calc.btnAc.addEventListener('click', allClear);
+        elements.calc.btnDel.addEventListener('click', deleteLastChar);
+        elements.calc.btnPercent.addEventListener('click', inputPercent);
+        elements.calc.btnSign.addEventListener('click', toggleSign);
 
-        // 运算符按钮
-        elements.btnAdd.addEventListener('click', function() {
-            inputOperator('+', elements.btnAdd);
-        });
-        elements.btnSubtract.addEventListener('click', function() {
-            inputOperator('-', elements.btnSubtract);
-        });
-        elements.btnMultiply.addEventListener('click', function() {
-            inputOperator('×', elements.btnMultiply);
-        });
-        elements.btnDivide.addEventListener('click', function() {
-            inputOperator('÷', elements.btnDivide);
-        });
-
-        // 等号按钮
-        elements.btnEquals.addEventListener('click', calculateEquals);
-
-        // 清除按钮
-        elements.btnAc.addEventListener('click', allClear);
-        elements.btnDel.addEventListener('click', deleteLastChar);
-
-        // 百分比按钮
-        elements.btnPercent.addEventListener('click', inputPercent);
-
-        // 正负切换按钮
-        elements.btnSign.addEventListener('click', toggleSign);
-
-        // 键盘事件
-        document.addEventListener('keydown', handleKeyboard);
+        document.addEventListener('keydown', handleCalcKeyboard);
+        updateCalcDisplay();
     }
 
-    // ==================== 初始化 ====================
+    function renderTodoList() {
+        elements.todo.list.innerHTML = '';
+        state.todo.forEach((item, index) => {
+            const li = document.createElement('li');
+            li.className = 'todo-item' + (item.completed ? ' completed' : '');
+            li.dataset.index = index;
 
-    /**
-     * 初始化计算器
-     */
+            const checkbox = document.createElement('div');
+            checkbox.className = 'todo-checkbox';
+            checkbox.addEventListener('click', () => toggleTodoComplete(index));
+
+            const text = document.createElement('span');
+            text.className = 'todo-text';
+            text.textContent = item.text;
+            text.addEventListener('dblclick', () => startEditTodo(index));
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'todo-delete';
+            deleteBtn.textContent = '×';
+            deleteBtn.addEventListener('click', () => deleteTodo(index));
+
+            li.appendChild(checkbox);
+            li.appendChild(text);
+            li.appendChild(deleteBtn);
+            elements.todo.list.appendChild(li);
+        });
+        updateTodoStats();
+    }
+
+    function updateTodoStats() {
+        const total = state.todo.length;
+        const completed = state.todo.filter(item => item.completed).length;
+        elements.todo.stats.textContent = `已完成: ${completed} / ${total}`;
+    }
+
+    function saveTodos() {
+        saveToStorage(STORAGE_KEYS.TODO_ITEMS, state.todo);
+    }
+
+    function addTodo() {
+        const text = elements.todo.input.value.trim();
+        if (!text) {
+            showToast('请输入待办事项');
+            return;
+        }
+        const newItem = {
+            id: Date.now(),
+            text: text,
+            completed: false,
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+        };
+        state.todo.unshift(newItem);
+        saveTodos();
+        renderTodoList();
+        elements.todo.input.value = '';
+        elements.todo.input.focus();
+        showToast('待办已添加');
+    }
+
+    function deleteTodo(index) {
+        const item = elements.todo.list.children[index];
+        if (item) {
+            item.classList.add('deleting');
+            setTimeout(() => {
+                state.todo.splice(index, 1);
+                saveTodos();
+                renderTodoList();
+                showToast('待办已删除');
+            }, 300);
+        }
+    }
+
+    function toggleTodoComplete(index) {
+        state.todo[index].completed = !state.todo[index].completed;
+        state.todo[index].updatedAt = Date.now();
+        saveTodos();
+        renderTodoList();
+    }
+
+    function startEditTodo(index) {
+        const li = elements.todo.list.children[index];
+        if (!li) return;
+
+        const textSpan = li.querySelector('.todo-text');
+        const currentText = state.todo[index].text;
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'todo-edit-input';
+        input.value = currentText;
+
+        li.replaceChild(input, textSpan);
+        input.focus();
+        input.select();
+
+        function finishEdit() {
+            const newText = input.value.trim();
+            if (newText) {
+                state.todo[index].text = newText;
+                state.todo[index].updatedAt = Date.now();
+                saveTodos();
+            }
+            renderTodoList();
+        }
+
+        input.addEventListener('blur', finishEdit);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                input.blur();
+            } else if (e.key === 'Escape') {
+                input.value = currentText;
+                input.blur();
+            }
+        });
+    }
+
+    function clearCompletedTodos() {
+        const completedCount = state.todo.filter(item => item.completed).length;
+        if (completedCount === 0) {
+            showToast('没有已完成的待办');
+            return;
+        }
+        state.todo = state.todo.filter(item => !item.completed);
+        saveTodos();
+        renderTodoList();
+        showToast(`已清除 ${completedCount} 项已完成待办`);
+    }
+
+    function initTodo() {
+        state.todo = loadFromStorage(STORAGE_KEYS.TODO_ITEMS, []);
+        renderTodoList();
+
+        elements.todo.addBtn.addEventListener('click', addTodo);
+        elements.todo.input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                addTodo();
+            }
+        });
+        elements.todo.clearBtn.addEventListener('click', clearCompletedTodos);
+    }
+
+    function calculateExchange() {
+        const fromRate = EXCHANGE_RATES[state.exchange.fromCurrency];
+        const toRate = EXCHANGE_RATES[state.exchange.toCurrency];
+        const result = (state.exchange.fromAmount / fromRate) * toRate;
+        state.exchange.toAmount = parseFloat(result.toFixed(4));
+        elements.exchange.toAmount.value = state.exchange.toAmount;
+        
+        const rate = (toRate / fromRate).toFixed(4);
+        elements.exchange.rateInfo.textContent = `1 ${state.exchange.fromCurrency} = ${rate} ${state.exchange.toCurrency}`;
+    }
+
+    function swapCurrencies() {
+        const tempCurrency = state.exchange.fromCurrency;
+        const tempAmount = state.exchange.fromAmount;
+
+        state.exchange.fromCurrency = state.exchange.toCurrency;
+        state.exchange.toCurrency = tempCurrency;
+        
+        state.exchange.fromAmount = state.exchange.toAmount || 0;
+
+        elements.exchange.fromCurrency.value = state.exchange.fromCurrency;
+        elements.exchange.toCurrency.value = state.exchange.toCurrency;
+        elements.exchange.fromAmount.value = state.exchange.fromAmount;
+
+        calculateExchange();
+    }
+
+    function initExchange() {
+        calculateExchange();
+
+        elements.exchange.fromAmount.addEventListener('input', (e) => {
+            state.exchange.fromAmount = parseFloat(e.target.value) || 0;
+            calculateExchange();
+        });
+
+        elements.exchange.fromCurrency.addEventListener('change', (e) => {
+            state.exchange.fromCurrency = e.target.value;
+            calculateExchange();
+        });
+
+        elements.exchange.toCurrency.addEventListener('change', (e) => {
+            state.exchange.toCurrency = e.target.value;
+            calculateExchange();
+        });
+
+        elements.exchange.swapBtn.addEventListener('click', swapCurrencies);
+    }
+
     function init() {
-        initEventListeners();
-        updateDisplay();
+        initTabManager();
+        initCalculator();
+        initTodo();
+        initExchange();
     }
 
-    // 页面加载完成后初始化
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
