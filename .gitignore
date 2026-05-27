@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test files
+test_calculator_unit.js
+test_results.json
+
+# Planning files
+task_plan.md
+findings.md
+progress.md
