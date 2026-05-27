@@ -1,0 +1,227 @@
+/* 简易计算器样式文件 */
+
+/* CSS变量定义 */
+:root {
+    /* 颜色方案 */
+    --color-number-bg: #E5E5E5;
+    --color-number-text: #333333;
+    --color-operator-bg: #FF9500;
+    --color-operator-text: #FFFFFF;
+    --color-function-bg: #D4D4D2;
+    --color-function-text: #333333;
+    --color-display-bg: #1C1C1C;
+    --color-expression-text: #8E8E93;
+    --color-result-text: #FFFFFF;
+    --color-error: #FF3B30;
+    --color-calculator-bg: #000000;
+
+    /* 按钮尺寸 - 移动端默认 */
+    --btn-size: 64px;
+    --btn-gap: 12px;
+    --btn-radius: 50%;
+
+    /* 字体大小 */
+    --font-expression: 16px;
+    --font-result: 32px;
+    --font-btn: 24px;
+}
+
+/* 重置样式 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* 页面基础样式 */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--color-calculator-bg);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+/* 计算器容器 */
+.calculator {
+    background-color: var(--color-calculator-bg);
+    border-radius: 20px;
+    padding: 20px;
+    max-width: 360px;
+    width: 100%;
+}
+
+/* 显示区域 */
+.display {
+    background-color: var(--color-display-bg);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: flex-end;
+    overflow: hidden;
+}
+
+/* 表达式区域 */
+.expression {
+    font-size: var(--font-expression);
+    color: var(--color-expression-text);
+    min-height: 24px;
+    word-break: break-all;
+    text-align: right;
+    width: 100%;
+}
+
+/* 结果区域 */
+.result {
+    font-size: var(--font-result);
+    color: var(--color-result-text);
+    font-weight: 300;
+    min-height: 40px;
+    word-break: break-all;
+    text-align: right;
+    width: 100%;
+    transition: font-size 0.2s ease;
+}
+
+/* 结果区域 - 错误状态 */
+.result.error {
+    color: var(--color-error);
+}
+
+/* 按钮区域 */
+.buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--btn-gap);
+}
+
+/* 按钮基础样式 */
+.btn {
+    width: var(--btn-size);
+    height: var(--btn-size);
+    border: none;
+    border-radius: var(--btn-radius);
+    font-size: var(--font-btn);
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    justify-self: center;
+}
+
+/* 按钮悬停状态 */
+.btn:hover {
+    filter: brightness(0.9);
+}
+
+/* 按钮按下状态 */
+.btn:active {
+    filter: brightness(0.8);
+    transform: scale(0.95);
+}
+
+/* 按钮禁用状态 */
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 数字按钮 */
+.btn-number {
+    background-color: var(--color-number-bg);
+    color: var(--color-number-text);
+}
+
+/* 运算符按钮 */
+.btn-operator {
+    background-color: var(--color-operator-bg);
+    color: var(--color-operator-text);
+}
+
+/* 运算符按钮激活状态 */
+.btn-operator.active {
+    background-color: var(--color-operator-text);
+    color: var(--color-operator-bg);
+}
+
+/* 功能按钮 */
+.btn-function {
+    background-color: var(--color-function-bg);
+    color: var(--color-function-text);
+}
+
+/* 等号按钮特殊样式 */
+.btn-equals {
+    font-weight: 600;
+}
+
+/* 响应式设计 - 桌面端 */
+@media (min-width: 768px) {
+    :root {
+        --btn-size: 72px;
+        --btn-gap: 16px;
+        --font-result: 40px;
+    }
+
+    .calculator {
+        max-width: 400px;
+    }
+
+    .display {
+        min-height: 120px;
+        padding: 24px;
+    }
+}
+
+/* 响应式设计 - 小屏幕移动端 */
+@media (max-width: 360px) {
+    :root {
+        --btn-size: 56px;
+        --btn-gap: 10px;
+        --font-btn: 20px;
+        --font-result: 28px;
+    }
+
+    .calculator {
+        padding: 12px;
+    }
+
+    .display {
+        padding: 16px;
+        min-height: 80px;
+    }
+}
+
+/* 超长数字时缩小字体 */
+.result.small-text {
+    font-size: calc(var(--font-result) * 0.7);
+}
+
+.result.extra-small-text {
+    font-size: calc(var(--font-result) * 0.5);
+}
+
+/* 键盘焦点样式 */
+.btn:focus-visible {
+    outline: 3px solid var(--color-operator-bg);
+    outline-offset: 2px;
+}
+
+/* 无障碍访问 - 减少动画 */
+@media (prefers-reduced-motion: reduce) {
+    .btn {
+        transition: none;
+    }
+
+    .result {
+        transition: none;
+    }
+}
